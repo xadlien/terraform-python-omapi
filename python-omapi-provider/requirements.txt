@@ -1,0 +1,1 @@
+pypureomapi==0.8

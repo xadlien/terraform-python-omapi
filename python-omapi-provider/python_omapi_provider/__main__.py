@@ -165,7 +165,10 @@ def read_data():
         data += line
 
     return data
-   
-if __name__ == '__main__':
+
+def main():
     context = open(os.environ["TF_CUSTOM_DIR"] + "/input", "r").read()
     print(json.dumps(handler(sys.argv[1], context)))
+
+if __name__ == '__main__':
+    main()

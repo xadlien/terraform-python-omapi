@@ -35,4 +35,5 @@ key omapi_key {
 }
 ```
 
-If you use the insecure method the algorithm is hmac-md5. Otherwise it is rsasha256.
+If you use the insecure method the algorithm is hmac-md5. Otherwise it is rsasha256.  
+After the settings are set, restart the isc-dhcp-server and ensure it stays up and running.

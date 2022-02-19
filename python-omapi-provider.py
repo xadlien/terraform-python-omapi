@@ -125,15 +125,17 @@ class IscDhcpServer:
 
 
 def handler(event, data):
-    # parse input json data
-    # create dhcp server connection
+    # data from object
     data_as_json = json.loads(data)
 
+    # data from provider
+    provider_data = json.loads(open(os.environ["TF_CUSTOM_DIR"] + "/provider_input", "r").read())
+
     dhcp_server = IscDhcpServer(
-        data_as_json['dhcp_server_ip'], 
-        data_as_json['omapi_port'], 
-        data_as_json['omapi_keyname'], 
-        data_as_json['omapi_key'])
+        provider_data['dhcp_server_ip'], 
+        provider_data['omapi_port'], 
+        provider_data['omapi_keyname'], 
+        provider_data['omapi_key'])
 
     # Create object to operate on
     ar = AddressReservation(

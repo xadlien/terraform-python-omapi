@@ -42,10 +42,11 @@ class IscDhcpServer:
         try:
             check_val = self.omapi.lookup_host(ar.hostname)
             print(f"ERROR: {ar.hostname} already reserved. Added to state...")
+            print(f"ERROR: please rerun apply to see changes that need to occur.")
             open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write(ar.hostname)
-            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(ar.to_dict()))
+            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(check_val))
             #return check_val 
-            exit(0)
+            exit(1)
         except pypureomapi.OmapiErrorNotFound:
             self.omapi.add_host_supersede_name(ar.ip, ar.mac, ar.hostname)
             open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write(ar.hostname)
@@ -60,7 +61,7 @@ class IscDhcpServer:
     def read_address_reservation(self, ar):
         try:
             return_data = self.omapi.lookup_host(ar.hostname)
-            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(ar.to_dict()))
+            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(return_data))
             exit(0)
         except pypureomapi.OmapiErrorNotFound:
             open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write("")

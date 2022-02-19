@@ -1,5 +1,6 @@
 import sys
 import json
+import os
 import pypureomapi
 
 class AddressReservation:
@@ -40,12 +41,16 @@ class IscDhcpServer:
         # check to make sure the host doesn't exist
         try:
             check_val = self.omapi.lookup_host(ar.hostname)
-            print(f"ERROR: {ar.hostname} already reserved")
+            print(f"ERROR: {ar.hostname} already reserved. Added to state...")
+            open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write(ar.hostname)
+            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(ar.to_dict()))
             #return check_val 
-            exit(1)
+            exit(0)
         except pypureomapi.OmapiErrorNotFound:
             self.omapi.add_host_supersede_name(ar.ip, ar.mac, ar.hostname)
-            return ar.to_dict()
+            open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write(ar.hostname)
+            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(ar.to_dict()))
+            exit(0)
 
     # filter based on object type
     def read(self, obj):
@@ -55,8 +60,10 @@ class IscDhcpServer:
     def read_address_reservation(self, ar):
         try:
             return_data = self.omapi.lookup_host(ar.hostname)
-            return return_data
+            open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(ar.to_dict()))
+            exit(0)
         except pypureomapi.OmapiErrorNotFound:
+            open(os.environ['TF_CUSTOM_DIR'] + "/id", 'w').write("")
             exit(1)
 
     # filter based on object type
@@ -94,11 +101,26 @@ class IscDhcpServer:
             return_data = self.omapi.lookup_host(ar.hostname)
             self.omapi.del_host(return_data['mac'])
             
-            return None
+            exit(0)
 
         except pypureomapi.OmapiErrorNotFound:
             print(f'ERROR: {ar.hostname} not found')
             exit(1)
+
+    # filter based on object type
+    def exists(self, obj):
+        if type(obj) == AddressReservation:
+            return self.exists_address_reservation(obj)
+
+    def exists_address_reservation(self, ar):
+        try:
+            return_data = self.omapi.lookup_host(ar.hostname)
+            print('true')
+            exit(0)
+
+        except pypureomapi.OmapiErrorNotFound:
+            print('false')
+            exit(0)
 
 
 
@@ -106,6 +128,7 @@ def handler(event, data):
     # parse input json data
     # create dhcp server connection
     data_as_json = json.loads(data)
+
     dhcp_server = IscDhcpServer(
         data_as_json['dhcp_server_ip'], 
         data_as_json['omapi_port'], 
@@ -113,11 +136,10 @@ def handler(event, data):
         data_as_json['omapi_key'])
 
     # Create object to operate on
-    if data_as_json['type'] == "address_reservation":
-        ar = AddressReservation(
-            data_as_json['hostname'], 
-            data_as_json['mac'], 
-            data_as_json['ip'])
+    ar = AddressReservation(
+        data_as_json['hostname'], 
+        data_as_json['mac'], 
+        data_as_json['ip'])
 
 
     if event == "create":
@@ -131,6 +153,9 @@ def handler(event, data):
             
     elif event == "delete":
         return dhcp_server.delete(ar)
+
+    elif event == "exists":
+        return dhcp_server.exists(ar)
    
 def read_data():
     data = ''
@@ -140,5 +165,5 @@ def read_data():
     return data
    
 if __name__ == '__main__':
-    context = read_data()
+    context = open(os.environ["TF_CUSTOM_DIR"] + "/input", "r").read()
     print(json.dumps(handler(sys.argv[1], context)))

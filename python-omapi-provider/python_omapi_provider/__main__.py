@@ -60,7 +60,8 @@ class IscDhcpServer:
 
     def read_address_reservation(self, ar):
         try:
-            return_data = self.omapi.lookup_host(ar.hostname)
+            oldstate_data = json.loads(open(os.environ["TF_CUSTOM_DIR"] + "/oldstate", "r").read())
+            return_data = self.omapi.lookup_host(oldstate_data["hostname"])
             open(os.environ['TF_CUSTOM_DIR'] + "/state", 'w').write(json.dumps(return_data))
             exit(0)
         except pypureomapi.OmapiErrorNotFound:
@@ -74,7 +75,8 @@ class IscDhcpServer:
 
     def update_address_reservation(self, ar):
         try:
-            return_data = self.omapi.lookup_host(ar.hostname)
+            oldstate_data = json.loads(open(os.environ["TF_CUSTOM_DIR"] + "/oldstate", "r").read())
+            return_data = self.omapi.lookup_host(oldstate_data["hostname"])
             need_update = False
             if ar.ip != return_data['ip']:
                 need_update = True 
